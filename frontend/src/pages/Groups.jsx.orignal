@@ -1,0 +1,271 @@
+import Dashboard from "../components/Layout/Dashboard"
+import React, { useState } from "react";
+import api from "../services/api";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
+
+function Groups() {
+      const navigate = useNavigate();
+      const [openDialog, setOpenDialog] = useState(false);
+      const [groups, setGroups] = useState([]);
+      const [loaded, setLoaded] = useState(false);
+      const [formData, setFormData] = useState({
+        group: ""
+    });
+
+    {/* Fetch Group Data for Table */}
+      const fetchGroups = async () => {
+          try {
+              const response = await api.get("/groups");
+              setGroups(response.data.group_details);
+          } catch {
+              toast.info("No Groups Available to Display");
+          }
+      };
+    {/* Page Content Loading */}
+      if (!loaded) {
+          setLoaded(true);
+          fetchGroups();
+      }
+    {/* Save Input Data */}
+      const handleChange = (e) => {
+        setFormData({
+            ...formData, [e.target.name]: e.target.value
+        });
+      };
+
+    {/* Button On Click event */}
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await api.post("/create-groups", formData);
+            if (response.data.message === "Group Created") {
+                toast.success(response.data.message);
+                setOpenDialog(false);
+                fetchGroups();
+            } else {
+                toast.error(response.data.message);
+            }
+            console.log(response.data);
+            setFormData({
+                group: "",
+            });
+        } catch (error) {
+            if (error.response && error.response.data) {
+                const msg = error.response.data.message;
+                if (typeof msg === "object") {
+                    const formatted = Object.entries(msg)
+                        .map(([field, errors]) => `${field}: ${errors.join(", ")}`)
+                        .join(" | ");
+                    toast.error(formatted);
+                } else {
+                    toast.error(msg);
+                }
+            } else {
+                toast.error("Group Creation Failed");
+            }
+        }
+    };
+
+    {/* Delete Groups */}
+    const handleDelete = async (group_name) => {
+        try {
+            const response = await api.delete(`/delete-groups/${group_name}`);
+            if (response.data.message === "Group Deleted") {
+                toast.success(response.data.message);
+                setOpenDialog(false);
+                fetchGroups();
+            } else {
+                toast.error(response.data.message);
+            }
+            console.log(response.data);
+            setFormData({
+                group: "",
+            });
+        } catch (error) {
+            if (error.response && error.response.data) {
+                const msg = error.response.data.message;
+                if (typeof msg === "object") {
+                    const formatted = Object.entries(msg)
+                        .map(([field, errors]) => `${field}: ${errors.join(", ")}`)
+                        .join(" | ");
+                    toast.error(formatted);
+                } else {
+                    toast.error(msg);
+                }
+            } else {
+                toast.error("Group Deletion Failed");
+            }
+        }
+    };
+
+  return (
+      <Dashboard>
+          <ToastContainer
+                  position="top-right"
+                  autoClose={5000} hideProgressBar={false}
+                  newestOnTop
+                  closeOnClick
+                  pauseOnHover
+          />
+          <div className="relative flex flex-col w-full h-full text-slate-700 bg-white  rounded-xl">
+              <div className="relative mx-4 mt-4 overflow-hidden text-slate-700 bg-white rounded-none">
+                  <div className="flex items-center justify-between ">
+                      <div>
+                          <h3 className="text-xl font-semibold text-slate-800">User Group Details</h3>
+                      </div>
+                      <div className="flex flex-col gap-2 shrink-0 sm:flex-row">
+                           <button onClick={() => setOpenDialog(true)}
+                              className="button-text-color flex select-none items-center gap-2 rounded-md bg-slate-800 py-2.5 px-4 text-xl font-semibold text-white shadow-md shadow-slate-900/10 transition-all hover:shadow-lg hover:shadow-slate-900/20 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                              type="submit">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="currentColor"
+                                   aria-hidden="true"
+                                   stroke-width="2" className="w-4 h-4">
+                                  <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+                              </svg>
+                          </button>
+                      </div>
+                  </div>
+              </div>
+              <div className="bg-white mt-3 p-0 rounded-md border-2">
+                  <table className="w-full text-left table-auto min-w-max">
+                      <thead>
+                      <tr>
+                          <th className="p-4 transition-colors cursor-pointer border-b-2  border-slate-800  bg-slate-200">
+                              <p className="flex items-center justify-between gap-2 font-sans text-l font-semibold leading-none text-slate-800"> Group Name
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" className="w-4 h-4">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
+                                  </svg>
+                              </p>
+                          </th>
+                          <th className="p-4 transition-colors cursor-pointer border-b-2 border-slate-800  bg-slate-200">
+                              <p className="flex items-center justify-between gap-2 font-sans text-l font-semibold leading-none text-slate-800"> Users
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" className="w-4 h-4">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
+                                  </svg>
+                              </p>
+                          </th>
+                          <th className="p-4 transition-colors cursor-pointer border-b-2 border-slate-800  bg-slate-200">
+                              <p className="flex items-center justify-between gap-2 font-sans text-l font-semibold leading-none text-slate-800"> Roles
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" className="w-4 h-4">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
+                                  </svg>
+                              </p>
+                          </th>
+                          <th className="p-4 transition-colors cursor-pointer border-b-2 border-slate-800  bg-slate-200 w-5">
+                              <p className="flex items-center justify-between gap-2 font-sans text-l font-semibold leading-none text-slate-800"> Action
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true" className="w-4 h-4">
+                                      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
+                                  </svg>
+                              </p>
+                          </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {groups.map((group, index) => (
+                          <tr key={index}>
+                              {/* Group Name */}
+                              <td className="p-4 border-b border-slate-200">
+                                  <p className="text-sm font-semibold text-slate-700">
+                                      {group.group_name}
+                                  </p>
+                              </td>
+                              {/* Users */}
+                              <td className="p-4 border-b border-slate-200">
+                                  <p className="text-sm font-semibold text-slate-700">
+                                      {group.users && group.users.length > 0 ? (
+                                           [...new Set(group.users)].map((user, index) => (
+                                              <span key={index} className="block">
+                                                  {user}
+                                              </span>
+                                          ))
+                                      ) : (
+                                          "No users"
+                                      )}
+                                  </p>
+                              </td>
+                              {/* Roles */}
+                              <td className="p-4 border-b border-slate-200">
+                                  <p className="text-sm font-semibold text-slate-700">
+                                      {group.roles && group.roles.length > 0 ? (
+                                           [...new Set(group.roles)].map((role, index) => (
+                                              <span key={index} className="block">
+                                                  {role}
+                                              </span>
+                                          ))
+                                      ) : (
+                                          "No roles"
+                                      )}
+                                  </p>
+                              </td>
+                              {/* Actions */}
+                              <td className="p-4 pl-7 justify-center items-center border-b border-slate-200">
+                                  <button
+                                      className="relative h-10 max-h-[40px] w-10 max-w-[40px] select-none rounded-lg text-center align-middle font-sans text-xs font-medium uppercase text-slate-900 transition-all hover:bg-slate-900/10 active:bg-slate-900/20 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                                      type="button" onClick={() => handleDelete(group.group_name)}>
+                                      <span className="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="w-6 h-6">
+                                              <path d="M9 3a1 1 0 00-1 1v1H5a1 1 0 000 2h.293l.854 10.243A2 2 0 008.14 19h7.72a2 2 0 001.993-1.757L18.707 7H19a1 1 0 100-2h-3V4a1 1 0 00-1-1H9z" />
+                                          </svg>
+                                      </span>
+                                  </button>
+                              </td>
+                          </tr>
+                      ))}
+                      </tbody>
+                  </table>
+              </div>
+              <div className="flex items-center justify-between p-3">
+                  <p className="block text-sm text-slate-500"> Page 1 of 10</p>
+                  <div className="flex gap-1">
+                      <button className="rounded border border-slate-300 py-2.5 px-3 text-center text-xs font-semibold text-slate-600 transition-all hover:opacity-75 focus:ring focus:ring-slate-300 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
+                          Previous
+                      </button>
+                      <button className="rounded border border-slate-300 py-2.5 px-3 text-center text-xs font-semibold text-slate-600 transition-all hover:opacity-75 focus:ring focus:ring-slate-300 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none" type="button">
+                          Next
+                      </button>
+                  </div>
+              </div>
+          </div>
+          {openDialog && (
+          <div data-dialog-backdrop="dialog" data-dialog-backdrop-close="true" className="absolute left-0 top-0 inset-0 z-[999] grid place-items-center bg-transparent backdrop-blur-xs transition-opacity duration-300">
+              <div data-dialog="dialog" className="relative mx-auto flex w-full max-w-[24rem] flex-col rounded-xl text-slate-700 bg-clip-border bg-slate-300/60  border-slate-900 border-2 shadow-md">
+                  <button onClick={() => setOpenDialog(false)} className="absolute top-4 right-3 text-slate-700 hover:text-slate-900">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 hover:stroke-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                  </button>
+                  <div className="flex flex-col p-6">
+                      <h4 className="text-2xl mb-3 font-semibold text-slate-700"> Create New Group </h4>
+                      <p className="mb-1 mt-1 text-shadow-slate-700"> Enter information to create groups.</p>
+                      <div className="w-full max-w-sm min-w-[200px] mt-4">
+                          <label className="block mb-2 text-md font-semibold text-shadow-slate-700">
+                              Group Name
+                          </label>
+                          <input name="group" type="text" className="w-full h-10 bg-transparent placeholder:text-shadow-slate-800 text-slate-800 text-sm border border-slate-400 rounded px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-700 hover:border-slate-900 shadow-sm focus:shadow-md" placeholder="group" value={formData.group} onChange={handleChange} required/>
+                      </div>
+                  </div>
+                  <div className="p-6 pt-0">
+                      <div className="flex space-x-2">
+                         <button
+                              className="button-text-color w-full mx-auto select-none rounded bg-slate-800 py-2 px-4 text-center text-sm font-semibold text-white shadow-md shadow-slate-900/10 transition-all hover:shadow-lg hover:shadow-slate-900/20 active:opacity-[0.85] disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                              type="button"
+                              data-dialog-close="true" onClick={handleSubmit}>
+                              Create
+                         </button>
+                           <button onClick={() => setOpenDialog(false)}
+                              className="border-button w-full rounded-md ml-2 text-slate-800 text-sm border-2 border-slate-800 rounded px-3 py-2"
+                              type="button"
+                              data-dialog-close="true">
+                              Cancel
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>)}
+      </Dashboard>
+  );
+}
+
+export default Groups;
